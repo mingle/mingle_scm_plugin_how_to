@@ -18,6 +18,6 @@ The documentation is licensed under the "Creative Commons Attribution 3.0 Unport
 
 The ruby builder code is licensed under the MIT license.
 
-h4. Special Thanks
+h3. Special Thanks
 
 The ruby builder code is based upon the scripts that Martin Fowler uses to maintain his web site and bliki.  Thanks, Martin!
