@@ -1,0 +1,199 @@
+<!-- Copyright (c) 2010 ThoughtWorks Inc., licensed under Creative Commons Attribution 3.0 Unported license http://creativecommons.org/licenses/by/3.0/ -->
+
+<?xml version="1.0"?>
+<chapter title="Source Browser">
+  
+  <p>We will now build the source browser. This includes the directory browse view as well as show source and file download. This task includes both view and model coding.</p>
+  
+  <note>
+    <p>Following along with hg plugin source code:</p>
+    <p>This one is a bit tricky in that a portion of the source integration in hg plugin is implemented in Java (for better performance). In the Rails plugin, look at the app/models/hg_repository.rb file and the  app/views/hg_source folder. In the Java source, look at the com.thoughtworks.studios.mingle.hg.sourcebrowser package.</p>
+  </note>
+  
+  <section title="The browser">
+    <subsection title="Nodes">
+    <p>The first step is to add a <inlinecode>node</inlinecode> method to the repository class built in the previous section. This method will be passed a path and a revision identifier and must return a node.  That node will represent either a file or a directory and provides the data needed to populate the directory view.</p>
+    <p>So get started by adding a <inlinecode>node</inlinecode> method to the repository class with the following parameters:</p>
+    <table caption="Parameters passed to node">
+      <header-row>
+        <label>Parameter</label>
+        <label>Type</label>
+        <label>Description</label>
+      </header-row>
+      <row>
+        <col>path</col>
+        <col>String</col>
+        <col>The path to the requested node, relative to the root of the source repository. If the root node is requested, the value will be an empty string.</col>
+      </row>
+      <row>
+        <col>revision_identifier</col>
+        <col>String</col>
+        <col>Identifies which revision of the repository the user has requested. Note that this value will be entered by the user, so be permissive where appropriate, e.g., perhaps accept both rev number and rev hash for a DSCM, but also be defensive where appropriate, e.g., when a bogus identifier is passed.</col>
+      </row>
+    </table>
+    <p>If the requested node does not exist, this method must throw an exception of type <inlinecode>Repository::NoSuchRevisionError</inlinecode>. This exception class exists in the Mingle code base.  This is an unfortunate dependency from the days when SCM integration was not pluggable and we hope to clean this up in the future.</p>
+    <p>The node method must return an object providing numerous methods to support the source browser. To start, add a new class (or likely classes if you use separate classes for file and directory ndoes) to your model, likely named along the lines of <inlinecode>YourScmNode</inlinecode>. The node's methods must include the the accessors required to render a directory as well as the methods required by the view source page and file download. Depending upon whether the node represents a file or directory, the node must provide a slightly different set of methods for this rendering. Following are the methods required of each node instance:</p>
+    <table caption="Methods of a node instance required by Mingle">
+      <header-row>
+        <label>Method</label>
+        <label>Params</label>
+        <label>Return type</label>
+        <label>File</label>
+        <label>Directory</label>
+        <label>Description / Return Value</label>
+      </header-row>
+      <row>
+        <col>dir?</col>
+        <col>&#xA0;</col>
+        <col>Boolean</col>
+        <col>&#x2713;</col>
+        <col>&#x2713;</col>
+        <col>Returns true if node is a directory, false if not.</col>
+      </row>
+      <row>
+        <col>binary?</col>
+        <col>&#xA0;</col>
+        <col>Boolean</col>
+        <col>&#x2713;</col>
+        <col>&#xA0;</col>
+        <col>Returns true if file has binary content, false if text content.</col>
+      </row>
+      <row>
+        <col>root_node?</col>
+        <col>&#xA0;</col>
+        <col>Boolean</col>
+        <col>&#xA0;</col>
+        <col>&#x2713;</col>
+        <col>Returns true if directory is the repository root, false if not.</col>
+      </row>
+      <row>
+        <col>name</col>
+        <col>&#xA0;</col>
+        <col>String</col>
+        <col>&#x2713;</col>
+        <col>&#x2713;</col>
+        <col>Returns the name of the node, not including any path information, e.g., the name of 'basedir/subdir/file.txt' would be 'file.txt.'</col>
+      </row>
+      <row>
+        <col>file_contents</col>
+        <col>io</col>
+        <col>Boolean</col>
+        <col>&#x2713;</col>
+        <col>&#xA0;</col>
+        <col>Writes the contents of the file to the passed io instance. For binary files, this will provide file download. For text files, this will provide the content for the view source page.</col>
+      </row>
+      <row>
+        <col>display_path</col>
+        <col>&#xA0;</col>
+        <col>Boolean</col>
+        <col>&#x2713;</col>
+        <col>&#x2713;</col>
+        <col>Returns a string containing the full path to the node, e.g., 'basedir/subdir/file.txt' for the file node 'basedir/subdir/file.txt'</col>
+      </row>
+      <row>
+        <col>parent_display_path</col>
+        <col>&#xA0;</col>
+        <col>Boolean</col>
+        <col>&#x2713;</col>
+        <col>&#x2713;</col>
+        <col>Returns a string containing the full path to the node's parent directory, e.g., 'basedir/subdir' for the file node 'basedir/subdir/file.txt'</col>
+      </row>
+      <row>
+        <col>parent_path_components</col>
+        <col>&#xA0;</col>
+        <col>Array of String</col>
+        <col>&#x2713;</col>
+        <col>&#x2713;</col>
+        <col>Returns an array of the names of each part of the node's parent path, e.g., return ['basedir', 'subdir'] for the file node 'basedir/subdir/file.txt.'</col>
+      </row>
+      <row>
+        <col>path_components</col>
+        <col>&#xA0;</col>
+        <col>Array of String</col>
+        <col>&#x2713;</col>
+        <col>&#x2713;</col>
+        <col>Returns an array of the names of each part of the node's path, e.g., return ['basedir', 'subdir', 'file.txt'] for 'basedir/subdir/file.txt.'</col>
+      </row>
+      <row>
+        <col>children</col>
+        <col>&#xA0;</col>
+        <col>Array of Node</col>
+        <col>&#xA0;</col>
+        <col>&#x2713;</col>
+        <col>Returns an array of node instances representing the children of this directory. Watch out for performance issues when implementing this method!</col>
+      </row>
+    </table>
+    <p>That is a lot of methods, and, unfortunately, more are required. Mingle defers to the plugin to provide the view for each child row in the directory view.  Providing that view is outlined in the next section, but while you are implementing your node classes, you might as well take a look at what additional methods you might want in order to implement the directory row view. As an example, following are the additional methods used by the hg source browser plugin to render directory rows:</p>
+    <table caption="Methods of a node instane used by hg source browser plugin to render directory row">
+      <header-row>
+        <label>Method</label>
+        <label>Params</label>
+        <label>Return type</label>
+        <label>File</label>
+        <label>Directory</label>
+        <label>Description / Return Value</label>
+      </header-row>
+      <row>
+        <col>most_recent_commit_time</col>
+        <col>&#xA0;</col>
+        <col>Time</col>
+        <col>&#x2713;</col>
+        <col>&#x2713;</col>
+        <col>When a commit was last made on this path. For a file this is simply the last time that file was committed. For a directory, this is the last time any changes were committed anywhere in this directory (recursively). See later note on how you might look up this data from the Mingle DB.</col>
+      </row>
+      <row>
+        <col>most_recent_committer</col>
+        <col>&#xA0;</col>
+        <col>String</col>
+        <col>&#x2713;</col>
+        <col>&#x2713;</col>
+        <col>The name of the last person to commit on this path. For a file this is simply the last person to commit the file. For a directory, this is the last person to commit any changes anywhere in this directory (recursively). See later note on how you might look up this data from the Mingle DB.</col>
+      </row>
+      <row>
+        <col>most_recent_changeset_description</col>
+        <col>&#xA0;</col>
+        <col>String</col>
+        <col>&#x2713;</col>
+        <col>&#x2713;</col>
+        <col>The message for the last commit on this page. For a file this is simply the message for the last commit. For a directory, this is the message for the last commit anywhere in this directory (recursively). See later note on how you might look up this data from the Mingle DB.</col>
+      </row>
+    </table>
+  </subsection>
+  <subsection title="Directory browser">
+    <p>Next, provide two partials in the views folder of the plugin that will be used to render each row of the directory browser page. One partial will render the table header row, containing headers such as Age, Path, Most Recent Committer, etc. The other partial will render the data for each row.</p>
+    <p>You might recall implementing a <inlinecode>viewpartials</inlinecode> method in your configuration class in the <cref topic="configuration_model">Configuration Model</cref> section. This method returns a hash containing the paths to these partials.  You can name these partials whatever you like, but make sure they are in synch with the values for the <inlinecode>:node_table_header</inlinecode> <inlinecode>:node_table_row</inlinecode> keys in that hash. The views should be placed according to convention in the app/views/your_scm_source/ folder.</p>
+    <p>The <inlinecode>:node_table_row</inlinecode> will be passed the following locals:</p>
+     <table caption="Locals passed to directory browser row partial">
+        <header-row>
+          <label>Name</label>
+          <label>Type</label>
+          <label>Description</label>
+        </header-row>
+        <row>
+          <col>node</col>
+          <col>Node</col>
+          <col>The node to be represented by this row.</col>
+        </row>
+        <row>
+          <col>view_revision</col>
+          <col>String</col>
+          <col>The identifier for the revision currently being viewed. This is required to build links to elsewhere in the source browser. (See the hg partials for examples of building these links.)</col>
+        </row>
+      </table>
+    <p>Be sure to take a look at the two partials in the hg plugin at app/views/hg_source for more insight on how to supply these partials.</p>
+  </subsection>
+  
+  <p>Your directory browser should now work. Redeploy your plugin to Mingle and click on the source tab to see it in action. Because you implemented <inlinecode>binary?</inlinecode> and <inlinecode>file_contents</inlinecode> in your node, the show source page and binary file download should also be working.</p>
+
+  </section>
+  <section title="Looking up revision data from Mingle">
+    <p>If a revision has already been cached by Mingle, you might find it easier to lookup some of that information via Mingle rather than the SCM tool. In the hg plugin, take a look at app/models/hg_mingle_revision_repository for an example of this in action. Be very careful about what finders you attempt to use as performance could be impacted and this part of the Mingle model is undocumented for plugin authors. It's likely a good idea to not stray from the code in this class.</p>
+  </section>
+  <section title="What could go wrong?">
+    <p>The primary issue that will arise when writing the source browser is slow performance. Be very careful not to write code that makes an excessive number of network calls, file accesses, or subprocess invocations. Another problem will arise when using an SCM tool that does not provide an API that is particularly friendly to building a source browser. This is just such the case with Mercurial, where the command line is the only 'approved' interface and, as such, you might see some fairly interesting code in that plugin in the name of building a source browser.</p>
+  </section>
+  <section title="Can I skip building a source browser?">
+    <p>You might like to simply build the history integration and skip the source browser altogether. <todo>Figure out how one might do this and document it.</todo></p>
+  </section>
+  <cref topic="history_integration">Previous: History Integration</cref> | <cref topic="show_revision">Next: Show Revision</cref>
+</chapter>

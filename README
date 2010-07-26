@@ -1,0 +1,23 @@
+h3. Overview
+
+This is documentation for building a Mingle SCM integration. This documentation should be used in conjunction with the source code for the "Mingle Mercurial Plugin":http://github.com/ThoughtWorksStudios/mingle_hg_plugin
+
+h3. Building the documentation
+
+Requirements: 
+* ruby and rake installed
+* "Mingle Mercurial Plugin":http://github.com/ThoughtWorksStudios/mingle_hg_plugin repository cloned into a sibling directory (for purposes of adding code snippets)
+
+The default rake task will output the documentation to a folder named 'build'
+
+h3. License
+
+Copyright (c) 2010 ThoughtWorks Studios
+
+The documentation is licensed under the "Creative Commons Attribution 3.0 Unported license":http://creativecommons.org/licenses/by/3.0/
+
+The ruby builder code is licensed under the MIT license.
+
+h4. Special Thanks
+
+The ruby builder code is based upon the scripts that Martin Fowler uses to maintain his web site and bliki.  Thanks, Martin!

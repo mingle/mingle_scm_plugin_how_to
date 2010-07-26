@@ -1,0 +1,20 @@
+<!-- Copyright (c) 2010 ThoughtWorks Inc., licensed under Creative Commons Attribution 3.0 Unported license http://creativecommons.org/licenses/by/3.0/ -->
+
+<?xml version="1.0"?>
+<chapter title="Getting Started">
+  <p>Mingle SCM plugins are standard Rails plugins, using Engines. Because we are using Engines, Mingle supports the standard MVC source layout as well as database migrations for its plugins. Unfortunately, at this point we do not have a generator that produces scaffolding for an SCM plugin so you will need to do a few things by hand to get started.</p>
+  <section title="Plugin directory layout">
+    <p>Create a directory in which you will do your plugin development. At a minimum you will need to following directory structure below. You should also add tests and a rakefile in the appropriate locations.</p>
+    <img src="resources/images/directory_layout.jpg"/>
+  </section>
+  <section title="Basic plugin registration (init.rb)">
+    <p>In the init.rb file your plugin must register itself with Mingle in order to be available to projects. In the next section, you will build the configuration model for your plugin, but we'll need to create a simple version of that class here in order to register the plugin.</p>
+    <p>Create an ActiveRecord model class in the app/model directory named FooConfiguration, where 'Foo' is an appropriate name for your SCM. E.g, a Mercurial configuration model might be named HgConfiguration and a Subversion configuration model might be named SvnConfiguration. This configuration will be stored in the Mingle database and the table name should be sensible.  It's worth noting that your model names must not conflict with existing Mingle model names, so you might consider including the name of your organization in your model names.</p>
+    <p>To be registered, the configuration model must have a display_name class method that returns the human readable name for your SCM. </p>
+    <snippet ref="@hg_source@/app/models/hg_configuration.rb" name="display_name">The configuration model supplies a display name.</snippet>
+    <p>At this point you can add code to init.rb to register your plugin as below.</p>
+    <snippet ref="@hg_source@/init.rb" name="registration">The hg plugin registers itself with Mingle.</snippet>
+  </section>
+  
+  <cref topic="welcome">Previous: Welcome</cref> | <cref topic="configuration_model">Next: Configuration Model</cref>
+</chapter>

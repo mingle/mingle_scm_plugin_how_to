@@ -1,0 +1,82 @@
+<!-- Copyright (c) 2010 ThoughtWorks Inc., licensed under Creative Commons Attribution 3.0 Unported license http://creativecommons.org/licenses/by/3.0/ -->
+
+<?xml version="1.0"?>
+<chapter title="Show Revision">
+  
+  <p>Our final task is the show revision page. This page will list a summary of the revision as well as a diff of the changes This task will be implemented in the model.</p>
+  
+  <note>
+    <p>Following along with hg plugin source code:</p>
+    <p>Follow along in app/models/hg_repository.rb, app/models/hg_change.rb, app/models/hg_changeset.rb, and app/models/hg_html_diff.rb.</p>
+  </note>
+  
+  <section title="The revision and change models">
+    <p>Assuming the history integration is already built and working, the revision model already exists. In the hg plugin code, this is the <inlinecode>HgChangeset</inlinecode> class. The first step is to add methods to the model required to render a revision page as well as add a method to the repository model to find a specific revision.</p>
+    <p>Start by adding a <inlinecode>revision</inlinecode> method to the repository. In the hg example, notice that the method is actually named <inlinecode>changeset</inlinecode> and aliased to <inlinecode>revision</inlinecode>. This allows the hg repository to use its own native language but still conform to Mingle requirements. This method will be passed a single parameter, <inlinecode>revision_identifier</inlinecode>, which will be the identifier for the revision. The method should return a revision object, the requirements of which are discussed next.</p>
+    <p>As just mentioned, the repository's <inlinecode>revision</inlinecode> method will return a revision object. This model already exists. Add to this model a <inlinecode>changed_paths</inlinecode> method that will return a list of objects, each one representing a change in the commit.</p>
+    <p>In the hg code, this change model is the <inlinecode>HgChange</inlinecode> class. Your change model must implement the following methods:</p>
+    
+    <table caption="Methods required of a revision instance">
+      <header-row>
+        <label>Method</label>
+        <label>Type</label>
+        <label>Description / Return Value</label>
+      </header-row>
+      <row>
+        <col>action</col>
+        <col>String</col>
+        <col>Used by the mingle history feed, returns a single letter description of the change: 'A' for add, 'D' for delete, 'M' for modification, 'R' for rename. If you can detect that a change is both a modification and a rename, return the joined result, 'RM'</col>
+      </row>     
+       <row>
+         <col>action_class</col>
+         <col>String</col>
+         <col>(Todo: this logic really belongs inside of Mingle and not in the plugin, but for now we need to put it in each plugin.) Used by the revision show page, this drives the icons that appear next to each change in the list of changes. Valid classes include: 'added', 'renamed', 'modified', 'deleted', 'renamed-modified'</col>
+       </row>
+       <row>
+         <col>path</col>
+         <col>String</col>
+         <col>Used by both the revision show page and the history feed, returns the file path, from the repository root.</col>
+       </row>
+       <row>
+         <col>file?</col>
+         <col>Boolean</col>
+         <col>Returns true if change was a file, false if change was a directory. For any SCM that only tracks files, e.g., Mercurial, always return true.</col>
+       </row>
+       <row>
+         <col>binary?</col>
+         <col>Boolean</col>
+         <col>Returns whether the change was to a binary file.</col>
+       </row>
+       <row>
+         <col>deleted?</col>
+         <col>Boolean</col>
+         <col>Returns whether the change was a deletion.</col>
+       </row>
+       <row>
+         <col>modification?</col>
+         <col>Boolean</col>
+         <col>Returns whether the change was a modification.</col>
+       </row>
+       <row>
+         <col>path_components</col>
+         <col>Array of String</col>
+         <col>Used to build links in the revision show page, returns each part of the file path, e.g., 'basedir/subdir/file.txt' will return ['basedir', 'subdir', 'file.txt'].</col>
+       </row>
+       <row>
+         <col>html_diff</col>
+         <col>String (HTML)</col>
+         <col>Used in the revision show page, for a modification to a text file, return an HTML rendering of the diff. If the change is not both a modification and to a text file, this method need not be implemented. <todo>Document how to achieve the standard Mingle diff styling that appears in the Subversion and Perforce diffs.</todo></col>
+       </row>
+      </table>
+    </section>
+  
+  <section title="Finish">    
+    <p>The revision show page and the entire SCM plugin should now be complete! When testing keep in mind that the primary content of the revision show page is only rendered in a background caching job (in order to avoid connecting to an unreliable service, the SCM, during page rendering). If you watch the mingle.log file, you should see messages indicating the the rendering is taking place, at which point you can see the output of your work. You can increase the run frequency of these background jobs by making the dev/test environment changes suggested in the <cref topic="deployment_to_mingle">Deployment to Mingle</cref> section.</p>
+  </section>
+           
+  <section title="What could go wrong?">
+    <p>In building the hg plugin, we ran into several issues with memory spikes when building the changeset model for large changesets as well as changesets with large diffs. Be careful not to keep multiple copies of the data in memory at the same time, and be sure to take advantage of I/O pipelining wherever appropriate in order to avoid memory spikes.</p>
+  </section>
+  
+  <cref topic="source_browser">Previous: Source Browser</cref>
+</chapter>

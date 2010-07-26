@@ -1,0 +1,12 @@
+<!-- Copyright (c) 2010 ThoughtWorks Inc., licensed under Creative Commons Attribution 3.0 Unported license http://creativecommons.org/licenses/by/3.0/ -->
+
+<?xml version="1.0"?>
+<chapter title="Welcome">
+  <p>Thank you for making the effort to add to the rich Mingle ecosystem by building a new SCM integration plugin. We hope that this guide gives you all the information you require, but as this is a non-trivial endeavor, you might have some questions along the way. We encourage you to visit the <exref url="@scm_plugin_community_site_url@">ThoughtWorks Studios community site</exref> so that the Mingle team and other community developers can help you with difficulties and offer suggestions.</p> 
+  <p>Before you get started, be sure to <exref url="@hg_plugin_download_url@">download the mingle_hg_plugin (Mingle Mercurial plugin)</exref> from the community site. Your reading that source code while following this guide is paramount to your success in writing your own plugin. This documentation will regularly reference examples from that source code. Also, the source for the mingle_hg_plugin will provide many tips and tricks for unit testing your plugin.</p>
+  <p>It is recommended that you follow the order of the table of contents when building your plugin. You must complete the configuration model and controller before you can move on to Mingle history integration and source repository browsing. We highly recommend building the history integration piece before the source browser. This is due to the fact that in our experience building SCM plugins the history integration feature has been a much more straight-forward exercise.</p>
+  
+  <cref topic="getting_started">Next: Getting Started</cref>
+</chapter>
+
+

@@ -1,0 +1,124 @@
+<!-- Copyright (c) 2010 ThoughtWorks Inc., licensed under Creative Commons Attribution 3.0 Unported license http://creativecommons.org/licenses/by/3.0/ -->
+
+<?xml version="1.0"?>
+<chapter title="Configuration Model">
+  <p>Getting the configuration's model and controller for your plugin working is the most boring part of this exercise. You will want to do this as fast as possible without thinking too deeply about what we are asking you to do.  Take liberal advantage of copy and paste from an existing Mingle SCM plugin. Just get it working and move on to the more interesting parts of integrating your SCM with Mingle. Once you have completed your first pass through authoring your plugin and have a deeper understanding of how it interacts with Mingle, you can circle back around to your configuration to see if it needs any tweaks.</p>
+  <p>Each Mingle project which uses your SCM plugin will have a single configuration model containing information such as repository path and connection credentials. You will need to write a model, a migration, and a  controller in order to facilitate Mingle's managing the lifecycle of a project's SCM configuration.
+		</p>
+  <p>More so than other pieces you will build in your plugin, the configuration model is fairly dependent upon Mingle to actually work. This can be a bit of a challenge when it comes to unit testing. The good news is that if you follow along with the hg plugin source code you will see how to stub these dependencies and run database migrations outside of Mingle, allowing you to unit test your plugin in a lightweight fashion.</p>
+  <note>
+    <p>Following along with hg plugin source code:</p>
+    <p>You will want to look at app/models/hg_configuration.rb, db/migrate/1_add_hg_configuration.rb, tests/test_helper.rb, and tests/unit/hg_configuration_test.rb when reading this section.</p>
+  </note>
+  <section title="Migration">
+    <p>Write a migration file in the db/migrate folder of your plugin. Mingle requires the following four attributes in your model:</p>
+    <table>
+      <header-row>
+        <label>Attribute</label>
+        <label>Type</label>
+        <label>Description</label>
+      </header-row>
+      <row>
+        <col>project_id</col>
+        <col>integer</col>
+        <col>Foreign key to the project. You must also to declare 'belongs_to =&gt; :project' in your model.</col>
+      </row>
+      <row>
+        <col>initialized</col>
+        <col>boolean</col>
+        <col>Set by Mingle's background SCM synchronization job to indicate that initial synchronization has taken place.</col>
+      </row>
+      <row>
+        <col>card_revision_links_invalid</col>
+        <col>boolean</col>
+        <col>Used by Mingle's background SCM synchronization job to determine whether it is necessary to rebuild links between cards and revisions. Typically reset when card keywords are updated by a project administrator.</col>
+      </row>
+      <row>
+        <col>marked_for_deletion</col>
+        <col>boolean</col>
+        <col>Used by Mingle's background SCM synchronization job to determine whether to delete the configuration, revisions, and all associated project links.</col>
+      </row>
+    </table>
+    <p>Your migration must also setup any other attributes your plugin will require.  Typical SCM configuration attributes include repository path, username, and password.</p>
+    <p>Be sure to include teardown in your migration.</p>
+  </section>
+  <section title="Required methods">
+    <p>The following methods are required of your configuration model by Mingle:</p>
+    <table>
+      <header-row>
+        <label>Method</label>
+        <label>Type</label>
+        <label>Class</label>
+        <label>Instance</label>
+        <label>Description / Return Value</label>
+      </header-row>
+      <row>
+        <col>display_name</col>
+        <col>String</col>
+        <col>&#x2713;</col>
+        <col>&#xA0;</col>
+        <col>Returns the human readable name of your SCM.</col>
+      </row>
+      <row>
+        <col>vocabulary</col>
+        <col>Hash</col>
+        <col>&#xA0;</col>
+        <col>&#x2713;</col>
+        <col>A dictionary allowing Mingle to use your SCM's native language when describing concepts such as commits, repository, and tip. Required keys include 'revision', 'committed', 'repository', 'head' and 'short_identifier_length'.  All are strings except short_identifier_length.  short_identifier_length is an int and is used with SCM's with hash revision identifiers such as Mercurial and Git.</col>
+      </row>
+      <row>
+        <col>view_partials</col>
+        <col>Hash</col>
+        <col>&#xA0;</col>
+        <col>&#x2713;</col>
+        <col>Allows Mingle to lookup view partials for the table header and rows that are specific to your SCM. You will write these partials and place them in app/views.</col>
+      </row>
+      <row>
+        <col>repository</col>
+        <col>Object</col>
+        <col>&#xA0;</col>
+        <col>&#x2713;</col>
+        <col>This is the core object you will be building in order for Mingle to integrate with your SCM's repositories. We will discuss building this class in an upcoming section.</col>
+      </row>
+    </table>
+  </section>
+  <section title="strip_on_write">
+    <p>Many Mingle models use the <inlinecode>strip_on_write</inlinecode> helper provided by Mingle. This method will trim all leading and trailing whitespace from a model's attributes before writing to the database. If you wish to use this convenience, simply call <inlinecode>strip_on_write</inlinecode> in your model's class definition. Mingle will add this method to ActiveRecord::Base at runtime.</p>
+    <p>For purposes of running tests without Mingle, a copy of this method is provided in the hg plugin's test_helper.rb file. If you wish to write tests, you should similarly provide a copy of this method.</p>
+  </section>
+  <section title="RepositoryModelHelper">
+    <p>All SCM plugins that ship with Mingle include the RepositoryModelHelper module into their configuration models.  Apart from it being a poorly named module (we hope to rename to ScmConfigurationModelHelper in a future release), this can be one of the more confusing aspects to getting your configuration and controller up and running.</p>
+    <p>This module allows for much more simple controller code when it comes to saving your configuration. The problem that this module solves, whether to 'update' or 'copy &gt; mark for delete &gt; insert copy' is discussed in detail in the <cref topic="configuration_controller_and_view">Configuration Controller</cref> section. You most likely will want to include this module in your configuration. If you do, the following methods are required of your model:</p>
+    <table>
+      <header-row>
+        <label>Method</label>
+        <label>Type</label>
+        <label>Description / Return Value</label>
+      </header-row>
+      <row>
+        <col>clone_repository_options</col>
+        <col>Hash</col>
+        <col>All attribute names and values that are not part of the four mandatory Mingle attributes mentioned above.</col>
+      </row>
+      <row>
+        <col>repository_location_changed?</col>
+        <col>boolean</col>
+        <col>This method is passed a hash of attributes that represent the state of the model that is about to be saved. This method should compare its current state to these attributes to determine whether the configuration now represents an entirely different repository.  If this method returns true, Mingle will ensure that the next run of its background revision caching job deletes all existing revisions and card links and performs a fresh synchronization. In most cases, this is simply a URL comparison.</col>
+      </row>
+    </table>
+  </section>
+  <section title="Passwords">
+    <p>It is very common to store a password as part of a repository configuration.  Mingle's Project class contains an <inlinecode>encrypt</inlinecode> method that you should use in order to not store a plain text password in the Mingle database. Because the configuration belongs to a project, the configuration can easily use this encryption facility.</p>
+    <p>If you are storing a password, we recommend simply copying the <inlinecode>password</inlinecode> and <inlinecode>encrypt_password</inlinecode> methods from the HgConfiguration model that you are reading along with this help document.  And then connect the <inlinecode>encrypt_password</inlinecode> method to the <inlinecode>before_save</inlinecode> hook on the model.</p>
+    <p>The hg plugin's test helper demonstrates how to stub a simple Mingle Project instance. This stub includes stub encrypt/decrypt behavior.</p>
+  </section>
+  <section title="Mingle API">
+    <p>If you are writing your controller such that your SCM configuration becomes part of the Mingle API, you may wish to either a) override the <inlinecode>to_xml</inlinecode> method on your model to exclude sensitive information such as passwords, or b) use a helper that Mingle provides to serialize the attributes that you would like to expose. More information is provided in the <cref topic="configuration_controller_and_view">Configuration Controller and View section</cref> of this guide.</p>
+  </section>
+  <section title="Cleaning up">
+    <p>Lastly, be sure to have the configuration clean up after itself in an after_destroy hook. Typical clean up includes deleting repository files and other information cached on disk.</p>
+  </section>
+  
+  <cref topic="getting_started">Previous: Getting Started</cref> | <cref topic="configuration_controller_and_view">Next: Configuration Controller And View</cref>
+  
+</chapter>

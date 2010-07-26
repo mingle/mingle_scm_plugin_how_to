@@ -1,0 +1,61 @@
+# Copyright (c) 2010 ThoughtWorks Inc., licensed under MIT license 
+
+require 'rexml/document'
+
+Dir[File.dirname(__FILE__) + '/builder/*.rb'].each do |builder_file|
+  require builder_file
+end
+
+BUILD_DIR = File.join(File.dirname(__FILE__), 'build')
+TEMP_DIR = File.join(BUILD_DIR, 'temp')
+TOPICS_DIR = File.join(File.dirname(__FILE__), 'topics')
+
+SUBSTITUTIONS = {
+  :scm_plugin_community_site_url => 'http://community.thoughtworks.com/hives/13b0bb2d89/summary',
+  :hg_plugin_download_url => 'http://github.com/ThoughtWorksStudios/mingle_hg_plugin',
+  :hg_source => "#{File.dirname(__FILE__)}/../mingle_hg_plugin/rails_plugin"
+}
+
+task :default => ['build:site']
+
+task :clean do
+	rm_rf BUILD_DIR
+end
+
+namespace :build do
+
+  task :entries do
+    
+    temp_substitution_dir = File.join(BUILD_DIR, 'temp/topics')
+    mkdir_p temp_substitution_dir    
+    Dir["#{TOPICS_DIR}/*.xml"].each do |source_file|
+      File.open(File.join(TEMP_DIR, 'topics', File.basename(source_file)), 'w') do |subst|
+        File.open(source_file).each do |line|
+          SUBSTITUTIONS.each{|k, v| line.gsub!(/@#{k}@/, v)}
+          line.gsub!(/\t/, '  ')
+          subst << line
+        end
+      end
+    end
+        
+    target_dir = File.join(BUILD_DIR)
+    mkdir_p target_dir
+    Dir["#{TEMP_DIR}/topics/*.xml"].each do |source_file|
+      TopicMaker.new(source_file, File.join(File.dirname(__FILE__), 'help_index.xml'), target_dir).run
+    end
+    
+    rm_rf(TEMP_DIR)
+    cp(File.join(BUILD_DIR, 'welcome.html'), File.join(BUILD_DIR, 'index.html'))
+  end
+  
+  task :resources do
+    rm_rf(File.join(BUILD_DIR, 'resources'))
+    mkdir_p(File.join(BUILD_DIR, 'resources'))
+    cp_r(File.join(File.dirname(__FILE__), 'resources'), BUILD_DIR)
+  end
+  
+  task :site => [:clean, :resources, :entries]
+  
+end
+
+  

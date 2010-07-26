@@ -1,0 +1,43 @@
+<!-- Copyright (c) 2010 ThoughtWorks Inc., licensed under Creative Commons Attribution 3.0 Unported license http://creativecommons.org/licenses/by/3.0/ -->
+
+<?xml version="1.0"?>
+<chapter title="Deployment To Mingle">
+  <p>You have now completed building the 'not fun' parts of a Mingle SCM plugin. Before we move on to the real action, let's make sure that you can deploy to Mingle and configure a project to use your new SCM type.</p>
+  <section title="Deployment">
+    <p>Deploy your plugin much as any Rails plugin. Copy the entire plugin tree, less tests, to the vendor/plugins directory of your Mingle installation. Now, restart Mingle, and see if your plugin type is available in each project's repository settings. Note that you will need to login as a project administrator in order to use this page.</p>
+    <p>Once your SCM type shows up, make sure that you can do the following:
+      <bullets>
+        <item>Add a new configuration when none exists. Ensure that configuration information shows up in the UI as well as the database.</item>
+        <item>Make a change to a configuration not requiring a complete recache of the repository, e.g., username or password. Ensure that this change results only in an update of the existing record and not in a mark for deletion of the existing record plus insertion of new record.</item>
+      <item>Make a change to a configuration that does require a complete recache of the repository, e.g., repository path. Ensure that this change results in the existing record being marked for deletion (in database), and the insertion of a record with the new data.</item>
+      <item>Delete an existing configuration.</item>       
+      </bullets>
+    </p>
+    <p>Note that because we have not completed building our plugin, you will see errors in the server logs.  These errors are a result of Mingle attempting to synch with the SCM repository using unimplemented methods in your plugin. Despite these errors, the above described tests should still all pass.</p>
+  </section>
+  
+  <section title="Optimizing Mingle Configuration For Plugin Testing">
+    <p>Ideally, you will be testing most of your plugin's behavior with unit tests (following the style suggested by the hg source), but you will still need to do a fair amount of deployment to Mingle, along with a restart, in order to check that it truly does what you expect.  This presents a couple of issues:</p>
+    <bullets>
+    <item>A Mingle restart can be fairly obtrusive to a development and test cycle as this restart takes around 1 minute.</item>
+    <item>Second, the background jobs which cache your SCM repositories for Mingle run at intervals which are a bit too infrequent for development and test.</item>
+  </bullets>
+    
+    <p>There a few steps you can take to mitigate the above issues.</p>
+    <warning>
+      <p>Be sure to backup any file you are about to edit before making these changes.</p>
+      <p>Several application features, notably all import and export functions, will not work with these edits, so please do not make them on your production instances.</p>
+    </warning>
+    <steps title="Changes to mingle_install_dir/config/web.xml">
+      <item>Reduce the jruby pool to a fixed size of 3. Change value of jruby.pool.maxObjects, jruby.pool.minIdle, jruby.pool.initialSize params to 3.</item>
+      <item>Delete the following 'servlet' elements altogether: MurmurServlet, link_cards_and_murmurs, full_text_search_indexing_processors, project_exports_processor, process_project_imports, card_importing_preview, import_cards, history_generation, compute_aggregrates, clean_expired_sessions, send_history_notifications</item>
+      <item>Find the 'cache_revisions' servlet element and change the value of the 'interval' parameter to 10. Also change the value of 'minIdle' to 2. This will result in Mingle checking for new revisions every 10 seconds.</item>
+      <item>Make the same edit, changing 'interval' value to 10 and 'minIdle' to 2 for the 'publish_cache_revision_content_messages' and 'cache_revision_content' servlets. This will result in Mingle attempting to perform background caching of the revision show, aka diff, partial every 10 seconds.</item>
+    </steps>
+    
+    <p>With the smaller, fixed number of jruby runtimes, you may also wish to run Mingle with a smaller, fixed JVM heap size. For 3 runtimes you likely should set a min and max heap size of 512M.  To do this you can add '-Xms512m' and '-Xmx512m' on separate lines to your mingle.properties file.</p>
+      
+  </section>
+  
+  <cref topic="configuration_controller_and_view">Previous: Configuration Controller And View</cref> | <cref topic="history_integration">Next: History Integration</cref>
+</chapter>
