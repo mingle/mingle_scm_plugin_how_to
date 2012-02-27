@@ -2,14 +2,14 @@
 
 <?xml version="1.0"?>
 <chapter title="History Integration">
-  
+
   <p>To this point, you've done a fair bit of work without much payoff in terms of seeing your SCM tool integrate with Mingle. Let's quickly change that. You will now build the piece that allows revisions to show in Mingle's global and card history.</p>
-  
+
   <note>
     <p>Following along with hg plugin source code:</p>
     <p>You will want to look at app/models/hg_repository.rb and app/models/hg_changeset.rb when reading this section.</p>
   </note>
-  
+
   <section title="Repository and Revision">
     <p>In order to include revisions in project and card history, your configuration model must supply a <inlinecode>repository</inlinecode> method which returns an object representing your source repository. For purposes of history integration, the repository need only supply a single instance method, <inlinecode>next_revisions</inlinecode>, that returns an Array of revision objects, each representing a single revision in your repository.</p>
     <table caption="Parameters for next_revisions">
@@ -20,8 +20,8 @@
       </header-row>
       <row>
         <col>skip_up_to</col>
-        <col>Integer</col>
-        <col>The revision number of the last revision cached by Mingle. For distributed SCM tools, which use a hash to identify a revision, this will not be that hash, but will instead by the numeric, sequential revision identifier maintained by the local clone of that repository which Mingle manages.</col>
+        <col>Revision</col>
+        <col>The last revision cached by Mingle.</col>
       </row>
       <row>
         <col>limit</col>
@@ -29,9 +29,9 @@
         <col>The maximum number of revisions that your repository should return for any call to next_revisions. This limit helps avoid memory spiking and subsequent performance degradation of Mingle.</col>
       </row>
     </table>
-    
+
     <p>The <inlinecode>next_revisions</inlinecode> method will return an Array of revision objects, empty if there are no new revisions beyond the 'skip_up_to' parameter. For purposes of history integration, each revision instance must provide the following methods:</p>
-    
+
       <table caption="Methods required of a revision instance">
         <header-row>
           <label>Method</label>
@@ -64,10 +64,10 @@
            <col>The time at which the revision was committed. As with all timestamps, Mingle will store this as UTC in the database.</col>
          </row>
       </table>
-      
+
       <p>Once you have written your repository and revision classes, and implemented the <inlinecode>next_revisions</inlinecode> method on your configuration class Mingle should be able to include revisions of this SCM type in its history.  Deploy to Mingle, configure a project, and give it a try.</p>
   </section>
-  
+
   <section title="Data and caching">
     <p>Some SCM plugin implementations will require the use of a filesystem, e.g., Mercurial requires a local clone of a repository in order to perform operations such as log. You must be a good citizen when determining an appropriate part of the filesystem to use. A general rule of thumb is that you can use "MINGLE_DATA_DIR/plugins/&lt;your_plugin_name&gt;" as your filesystem. It's up to you beyond that, but you'l likely want to use the configuration model's id value as part of the organization scheme beneath that. If you need to use the filesystem, see app/models/hg_configuration.rb in the hg plugin for some ideas on file system organization.</p>
   </section>
@@ -78,6 +78,6 @@
     <p>If you're not launching a subprocess, you are likely making a network connection to a remote repository. When connecting to an unreliable, third-part service, be sure to be very cognizant of the fact that Mingle has a limited number of JRuby runtimes with which to handle requests. Despite that revision caching runs in the background it still uses a runtime from the same pool used to process front-end requests. Be sure to handle all errors and resource cleanup correctly. And you might also consider a timeout policy.</p>
     <p>Some SCM tools, such as Mercurial, will require that you maintain a local clone of a repository. You might also be writing caching files for various reasons.  Be sure to clean these up when a repository configuration is deleted (use an AR hook), lest your plugin be responsible for a loss of disk space on Mingle's host.</p>
   </section>
-  
+
   <cref topic="deployment_to_mingle">Previous: Deployment To Mingle</cref> | <cref topic="source_browser">Next: Source Browser</cref>
 </chapter>
