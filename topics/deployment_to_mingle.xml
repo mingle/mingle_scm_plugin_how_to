@@ -29,14 +29,27 @@
       <p>Several application features, notably all import and export functions, will not work with these edits, so please do not make them on your production instances.</p>
     </warning>
     <steps title="Changes to mingle_install_dir/config/web.xml">
-      <item>Reduce the jruby pool to a fixed size of 3. Change value of jruby.pool.maxObjects, jruby.pool.minIdle, jruby.pool.initialSize params to 3.</item>
-      <item>Delete the following 'servlet' elements altogether: MurmurServlet, link_cards_and_murmurs, full_text_search_indexing_processors, project_exports_processor, process_project_imports, card_importing_preview, import_cards, history_generation, compute_aggregrates, clean_expired_sessions, send_history_notifications</item>
-      <item>Find the 'cache_revisions' servlet element and change the value of the 'interval' parameter to 10. Also change the value of 'minIdle' to 2. This will result in Mingle checking for new revisions every 10 seconds.</item>
-      <item>Make the same edit, changing 'interval' value to 10 and 'minIdle' to 2 for the 'publish_cache_revision_content_messages' and 'cache_revision_content' servlets. This will result in Mingle attempting to perform background caching of the revision show, aka diff, partial every 10 seconds.</item>
+      <item>Delete the following 'servlet' elements where the 'servlet-name' is:
+        <bullets>
+          <item>daily_history_processing</item>
+          <item>take_stream_snapshots</item>
+          <item>project_exports_processor</item>
+          <item>luau_sync</item>
+          <item>process_project_imports</item>
+          <item>polling_pending_luau_authorization_request</item>
+          <item>card_importing_preview</item>
+          <item>import_cards</item>
+          <item>link_cards_and_murmurs</item>
+          <item>feeds_cache_populating</item>
+          <item>full_text_search_indexing_processors</item>
+          <item>compute_aggregates</item>
+          <item>send_history_notifications</item>
+        </bullets>
+      </item>
+      <item>Find the 'cache_revisions' servlet element and change the value of the 'interval' parameter to 10. Also change the value of 'minIdle' to 1. This will result in Mingle checking for new revisions every 10 seconds.</item>
+      <item>Find the 'cache_revision_content' servlet element and make the same edits, changing 'interval' value to 10 and 'minIdle' to 1.</item>
     </steps>
     
-    <p>With the smaller, fixed number of jruby runtimes, you may also wish to run Mingle with a smaller, fixed JVM heap size. For 3 runtimes you likely should set a min and max heap size of 512M.  To do this you can add '-Xms512m' and '-Xmx512m' on separate lines to your mingle.properties file.</p>
-      
   </section>
   
   <cref topic="configuration_controller_and_view">Previous: Configuration Controller And View</cref> | <cref topic="history_integration">Next: History Integration</cref>
