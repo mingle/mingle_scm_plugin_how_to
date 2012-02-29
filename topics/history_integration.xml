@@ -11,7 +11,7 @@
   </note>
 
   <section title="Repository and Revision">
-    <p>In order to include revisions in project and card history, your configuration model must supply a <inlinecode>repository</inlinecode> method which returns an object representing your source repository. For purposes of history integration, the repository need only supply a single instance method, <inlinecode>next_revisions</inlinecode>, that returns an Array of revision objects, each representing a single revision in your repository.</p>
+    <p>In order to include revisions in project and card history, your configuration model must supply a <inlinecode>repository</inlinecode> method which returns an object representing your source repository. For purposes of history integration, the repository need only supply a single instance method, <inlinecode>next_revisions</inlinecode>, that returns an Array of revision objects, ordered from oldest to newest, each representing a single revision in your repository.</p>
     <table caption="Parameters for next_revisions">
       <header-row>
         <label>Parameter</label>
@@ -30,7 +30,7 @@
       </row>
     </table>
 
-    <p>The <inlinecode>next_revisions</inlinecode> method will return an Array of revision objects, empty if there are no new revisions beyond the 'skip_up_to' parameter. For purposes of history integration, each revision instance must provide the following methods:</p>
+    <p>The <inlinecode>next_revisions</inlinecode> method will return an Array of revision objects, ordered from oldest to newest, empty if there are no new revisions beyond the 'skip_up_to' parameter. For purposes of history integration, each revision instance must provide the following methods:</p>
 
       <table caption="Methods required of a revision instance">
         <header-row>
