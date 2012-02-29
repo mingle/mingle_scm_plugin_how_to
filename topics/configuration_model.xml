@@ -80,6 +80,13 @@
         <col>&#x2713;</col>
         <col>This is the core object you will be building in order for Mingle to integrate with your SCM's repositories. We will discuss building this class in an upcoming section.</col>
       </row>
+      <row>
+        <col>source_browsing_ready?</col>
+        <col>boolean</col>
+        <col>&#xA0;</col>
+        <col>&#x2713;</col>
+        <col>Unless you have extra steps after the initial synchronization, you should simply return the value of the <inlinecode>initialized</inlinecode> attribute (see above)</col>
+      </row>
     </table>
   </section>
   <section title="strip_on_write">
