@@ -2,27 +2,27 @@
 
 <?xml version="1.0"?>
 <chapter title="Configuration Controller And View">
-  
+
   <p>In order for a user to manage a project's SCM configuration you will need to write both a controller and a view for the model. These can both be very simple. We know that copy and paste is generally a bad idea when writing code, but we will actually recommend that you copy the contents of both app/controllers/hg_configurations_controller.rb and app/views/hg_configurations/index.rhtml to the appropriate files in your plugin.  After you copy the content you can massage it to fit your plugin. The sections of this page will walk you through which parts you will need to change (aside from file and class names, references to your model class, and error message references to Mercurial, which you should have done as part of the copy and paste).</p>
-  
+
   <note>
     <p>Following along with hg plugin source code:</p>
     <p>You will want to look at app/controllers/hg_configurations_controller.rb and app/views/hg_configurations/index.rhtml when reading this section.</p>
   </note>
-  
+
   <section title="Controller">
-    
+
     <section title="Class definition">
       <p>As with all controllers, the plugin's configuration controller should verify that the appropriate HTTP method is used for actions that alter data. The <inlinecode>save</inlinecode> and <inlinecode>create</inlinecode> methods should only work for a POST. The <inlinecode>update</inlinecode> method (used only by API) should require a PUT.</p>
       <snippet ref="@hg_source@/app/controllers/hg_configurations_controller.rb" name="method_verification">Do not allow updates on GET.</snippet>
       <p>The controller must also declare privileges for each action. The Mingle standard is for only project administrators to have the ability to configure a project's SCM configuration:</p>
       <snippet ref="@hg_source@/app/controllers/hg_configurations_controller.rb" name="privileges">The SCM configurations controller should restrict access to its actions.</snippet>
-      
+
     </section>
 
     <section title="Required methods">
       <p>The controller must define the following two methods in order that tabs and the project admin menu are highlighted correctly:</p>
-      
+
       <table>
         <header-row>
           <label>Method</label>
@@ -37,13 +37,13 @@
         <row>
           <col>admin_action_name</col>
           <col>Hash</col>
-          <col>Determines which menu item in Project Admin menu to highlight. Return the <inlinecode>Project::ADMIN_TAB_INFO</inlinecode> constant, which is defined in the Mingle source code.</col>
+          <col>Determines which menu item in Project Admin menu to highlight. Return <inlinecode>super.merge(:controller => 'repository')</inlinecode>.</col>
         </row>
       </table>
-      
+
       <p>It's most easy to simply copy and paste these from the hg configuration controller.</p>
     </section>
-    
+
     <section title="Required actions">
       <p>The configuration controller must implement the following actions:</p>
       <table>
@@ -88,11 +88,11 @@
 
   	<section title="Handling API calls">
 	    <p>Some actions, as shown in the above table, should handle API calls. From the controller's perspective, all that needs to be done is detect when the request is for the API and then render the response in XML format:</p>
-	      
+
 	    <snippet ref="@hg_source@/app/controllers/hg_configurations_controller.rb" name="handling_xml_call">The controller should respond to API requests.</snippet>
-	    
+
 	    <p>Mingle provides the following routes for API users to access your controller's actions:</p>
-	    
+
 	    <table>
         <header-row>
           <label>URL Format</label>
@@ -120,9 +120,9 @@
           <col>show</col>
         </row>
       </table>
-      
+
       <p>Note that configuration ids are often not necessary in the URLs because there may be only one SCM configuration per project.</p>
-      
+
 	    <subsection title="Generating and formatting XML">
 	      <p>To maintain consistency with the Mingle API, we recommend that you use our helper method, <inlinecode>serializes_as</inlinecode>, to format your XML:</p>
 
@@ -133,24 +133,24 @@
   	    <p>The reason this code is in init.rb and is wrapped in a conditional is because we would only like it to run when the plugin is deployed to a Mingle instance. If it ran when the tests are run, the module and method would not be found.</p>
 
   	    <p>If you choose not to use this helper, you may wish to override the <inlinecode>to_xml</inlinecode> method on your model to exclude sensitive information such as passwords.</p>
-      </subsection>	    
+      </subsection>
   	</section>
   </section>
-  
-  <section title="View"> 
+
+  <section title="View">
     <p>Which views you are required to write is determined by how you implement your controller. If you implement your controller in much the same fashion as those supplied by Mingle, you will only need to implement an index template.  This template will contain a form that is used to both display the current configuration as well as collect data for saving a configuration.</p>
     <section title="Action bar">
       <p>You can use a supplied Mingle 'shared/repository_actions' partial to get the standard "Save, Cancel, Delete" action bar to appear at the top and bottom of your page. This partial requires a boolean local 'new_repository' that indicates whether the repository is an existing record, driving the presence of the delete action. This partial captures its content in an instance variable named @edit_actions, so after you render the partial once, be sure to render that variable wherever you want the action bar to appear.</p>
      <p>As stated above, the easiest path here is to start with a view for an existing SCM plugin and tweaking it until it suits your needs.</p>
     </section>
-    
+
     <section title="Password and other sensitive fields">
       <p>Be sure not to allow password and other sensitive fields to be visible as plain text. This is not applicable only to the user-entry of this data, but also the transmission and initial rendering of a page. Never display a password and never include one in the raw content of a page. If you start with the view for an existing SCM plugin, you will get this measure of safety for free.</p>
     </section>
-       
+
   </section>
-  
+
   <cref topic="configuration_model">Previous: Configuration Model</cref> | <cref topic="deployment_to_mingle">Next: Deployment To Mingle</cref>
-  
-  
+
+
 </chapter>
