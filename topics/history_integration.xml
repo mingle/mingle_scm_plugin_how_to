@@ -21,7 +21,7 @@
       <row>
         <col>skip_up_to</col>
         <col>Revision</col>
-        <col>The last revision cached by Mingle.</col>
+        <col>Retrieve only revisions that occurred after this revision</col>
       </row>
       <row>
         <col>limit</col>
